@@ -13,6 +13,7 @@ import (
 
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
+	recover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -74,28 +75,20 @@ func main() {
 	authService := service.NewAuthService(userRepo, cfg)
 	ffmpegService := service.NewFFMPEGService(jobRepo, userRepo, storageService, cfg)
 
-	// Create Fiber app with template engine
+	// Create Fiber app
 	app := handlers.NewFiberApp()
 
 	// Add middlewares
+	// app.Use(handlers.LoggingMiddleware())
+	app.Use(recover.New())
 	app.Use(cors.New())
 	app.Use(fiberLogger.New())
-
-	// Serve static files
-	app.Static("/static", "./views")
 
 	// Create handlers
 	handler := handlers.NewHandler(authService, ffmpegService)
 
-	// Swagger documentation with dark mode
-	app.Get("/swagger/*", swagger.New(swagger.Config{
-		Title:                    "FFMPEG Serverless API",
-		DeepLinking:              true,
-		DocExpansion:             "none",
-		PersistAuthorization:     true,
-		DefaultModelsExpandDepth: -1,
-		URL:                      "/swagger/doc.json",
-	}))
+	// Swagger documentation
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Register routes
 	handler.RegisterRoutes(app)
