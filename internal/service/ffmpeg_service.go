@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -80,6 +81,11 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 	job.Status = "processing"
 	if err := s.jobRepo.Update(ctx, job); err != nil {
 		s.updateJobStatus(ctx, job, "failed", fmt.Sprintf("failed to update job status: %v", err))
+		return
+	}
+
+	if !strings.HasPrefix(req.S3FileURL, "http") {
+		s.updateJobStatus(ctx, job, "failed", "Invalid S3 file URL")
 		return
 	}
 
