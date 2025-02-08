@@ -1,0 +1,329 @@
+basePath: /
+definitions:
+  dto.AuthResponse:
+    properties:
+      api_token:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.FFMPEGRequest:
+    properties:
+      command:
+        type: string
+      format:
+        enum:
+        - mp4
+        - webm
+        - mov
+        - avi
+        type: string
+      quality:
+        enum:
+        - low
+        - medium
+        - high
+        type: string
+      s3_file_url:
+        type: string
+    required:
+    - command
+    - format
+    - quality
+    - s3_file_url
+    type: object
+  dto.FFMPEGResponse:
+    properties:
+      status:
+        type: string
+      uuid:
+        type: string
+    type: object
+  dto.JobStatus:
+    properties:
+      created_at:
+        type: string
+      error:
+        type: string
+      progress:
+        type: integer
+      result:
+        type: string
+      status:
+        enum:
+        - pending
+        - processing
+        - completed
+        - failed
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    required:
+    - status
+    type: object
+  dto.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  response.APIError:
+    properties:
+      message: {}
+      type:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.APIError'
+      success:
+        type: boolean
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+  description: A serverless API for processing videos using FFMPEG
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: FFMPEG Serverless API
+  version: "1.0"
+paths:
+  /ffmpeg:
+    post:
+      consumes:
+      - application/json
+      description: Submit a video processing job using FFMPEG
+      parameters:
+      - description: FFMPEG processing details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.FFMPEGRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FFMPEGResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Process video with FFMPEG
+      tags:
+      - FFMPEG
+  /ffmpeg/progress/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get the progress of a video processing job
+      parameters:
+      - description: Job UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.JobStatus'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get job progress
+      tags:
+      - FFMPEG
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login with username and password to get API token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+      summary: Login user
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with username, password and email
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+      summary: Register a new user
+      tags:
+      - Auth
+schemes:
+- http
+- https
+securityDefinitions:
+  ApiKeyAuth:
+    description: API token for authentication
+    in: header
+    name: X-API-Token
+    type: apiKey
+swagger: "2.0"

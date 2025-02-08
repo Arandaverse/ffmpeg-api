@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{.Title}}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+      <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">{{.Title}}</h1>
+        <p class="text-gray-600 mb-8">
+          A powerful serverless API for processing videos using FFMPEG
+        </p>
+
+        <div class="space-y-6">
+          <div class="flex flex-col items-center justify-center">
+            <a
+              href="https://ffmpeg.arusense.com"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              Go to FFMPEG Web Interface
+            </a>
+            <p class="mt-4 text-sm text-gray-500">
+              Access our web interface for easy video processing
+            </p>
+          </div>
+
+          <div class="mt-12 border-t pt-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">
+              API Documentation
+            </h2>
+            <div class="flex justify-center">
+              <a
+                href="/swagger"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-300 ease-in-out"
+              >
+                View API Docs
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="mt-8 text-center text-gray-500 text-sm">
+        <p>&copy; 2024 AruSense. All rights reserved.</p>
+      </footer>
+    </div>
+  </body>
+</html>
