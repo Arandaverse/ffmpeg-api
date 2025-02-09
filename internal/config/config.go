@@ -49,6 +49,7 @@ type StorageConfig struct {
 	MinioUseSSL     bool
 	MinioBucketName string
 	MinioRegion     string
+	MinioBucketURL  string
 }
 
 // LoadConfig loads configuration from environment variables
@@ -91,6 +92,7 @@ func LoadConfig() (*Config, error) {
 			MinioUseSSL:     useSSL,
 			MinioBucketName: getEnv("MINIO_BUCKET_NAME", "ffmpeg-files"),
 			MinioRegion:     getEnv("MINIO_REGION", "us-east-1"),
+			MinioBucketURL:  getEnv("MINIO_BUCKET_URL", "http://127.0.0.1:9000"),
 		},
 	}, nil
 }

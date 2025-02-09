@@ -266,6 +266,8 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 			return
 		}
 
+		logger.Debug(s3URL, "S3 URL<<")
+
 		// Get file metadata
 		metadata := domain.OutputFileMetadata{
 			FileID:     uuid.New().String(),
@@ -301,6 +303,8 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 		currentOutputFile++
 		// Update progress for upload phase (75-99%)
 		job.Progress = 75 + int(float64(currentOutputFile)/float64(totalOutputFiles)*24)
+		// add files to job
+
 		if err := s.jobRepo.Update(ctx, job); err != nil {
 			logger.Error("failed to update job progress", "error", err)
 		}

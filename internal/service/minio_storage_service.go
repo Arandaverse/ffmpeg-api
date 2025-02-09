@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -57,6 +58,25 @@ func NewMinioStorageService(config *config.Config) (StorageService, error) {
 			return nil, fmt.Errorf("failed to create bucket: %w", err)
 		}
 		logger.Info("bucket created successfully", "bucket", config.Storage.MinioBucketName)
+	}
+
+	// Set bucket policy to public
+	policy := `{
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Effect": "Allow",
+				"Principal": {"AWS": "*"},
+				"Action": ["s3:GetObject"],
+				"Resource": ["arn:aws:s3:::` + config.Storage.MinioBucketName + `/*"]
+			}
+		]
+	}`
+
+	err = client.SetBucketPolicy(context.Background(), config.Storage.MinioBucketName, policy)
+	if err != nil {
+		logger.Error("failed to set bucket policy", "error", err)
+		return nil, fmt.Errorf("failed to set bucket policy: %w", err)
 	}
 
 	logger.Info("MinIO storage service initialized successfully")
@@ -154,6 +174,10 @@ func (s *MinioStorageService) UploadFile(ctx context.Context, localPath string, 
 	_, err = s.client.PutObject(ctx, s.config.Storage.MinioBucketName, objectKey, file, fileInfo.Size(),
 		minio.PutObjectOptions{
 			ContentType: "application/octet-stream",
+			UserMetadata: map[string]string{
+				"x-amz-meta-filename": objectKey,
+			},
+			Expires: time.Now().Add(time.Hour * 24 * 30),
 		})
 	if err != nil {
 		logger.Error("failed to upload file to MinIO", "error", err)
@@ -163,7 +187,9 @@ func (s *MinioStorageService) UploadFile(ctx context.Context, localPath string, 
 	logger.Info("file uploaded successfully",
 		"bucket", s.config.Storage.MinioBucketName,
 		"object", objectKey)
-	return objectKey, nil
+
+	// return the full url
+	return fmt.Sprintf("%s/%s", s.config.Storage.MinioBucketURL, objectKey), nil
 }
 
 func (s *MinioStorageService) DeleteFile(ctx context.Context, localPath string) error {
