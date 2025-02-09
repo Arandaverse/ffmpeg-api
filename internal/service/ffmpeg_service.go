@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"bufio"
+
 	"github.com/google/uuid"
 )
 
@@ -81,6 +83,7 @@ func (s *FFMPEGServiceImpl) GetJobStatus(ctx context.Context, uuid string, userI
 func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.JobStatus, req domain.FFMPEGRequest) {
 	startTime := time.Now()
 	job.Status = "PROCESSING"
+	job.Progress = 0 // Initialize progress
 	job.OriginalRequest = &req
 	if err := s.jobRepo.Update(ctx, job); err != nil {
 		s.updateJobStatus(ctx, job, "FAILED", fmt.Sprintf("failed to update job status: %v", err))
@@ -95,9 +98,11 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 	}
 	defer os.RemoveAll(tempDir)
 
-	// Download all input files
+	// Download all input files (25% of progress)
 	inputPaths := make(map[string]string)
 	var totalInputSize int64
+	totalFiles := len(req.InputFiles)
+	fileNum := 0
 	for key, url := range req.InputFiles {
 		if !strings.HasPrefix(url, "http") {
 			s.updateJobStatus(ctx, job, "FAILED", fmt.Sprintf("Invalid URL for input file %s", key))
@@ -118,6 +123,13 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 		}
 		totalInputSize += inputFileInfo.Size()
 		inputPaths[key] = inputPath
+
+		// Update progress for download phase (0-25%)
+		fileNum++
+		job.Progress = int(float64(fileNum) / float64(totalFiles) * 25)
+		if err := s.jobRepo.Update(ctx, job); err != nil {
+			logger.Error("failed to update job progress", "error", err)
+		}
 	}
 
 	// Prepare output paths
@@ -153,13 +165,73 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 		return
 	}
 
-	// Execute FFmpeg command
+	// Execute FFmpeg command (25-75% of progress)
+	job.Progress = 25
+	if err := s.jobRepo.Update(ctx, job); err != nil {
+		logger.Error("failed to update job progress", "error", err)
+	}
+
 	ffmpegStartTime := time.Now()
 	cmd := exec.CommandContext(ctx, s.config.FFMPEG.BinaryPath, args...)
+
+	// Capture stderr to parse progress
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		s.updateJobStatus(ctx, job, "FAILED", fmt.Sprintf("failed to create stderr pipe: %v", err))
+		return
+	}
+
 	if err := cmd.Start(); err != nil {
 		s.updateJobStatus(ctx, job, "FAILED", fmt.Sprintf("failed to start FFmpeg: %v", err))
 		return
 	}
+
+	// Start a goroutine to read stderr and update progress
+	service := s // Capture service instance for goroutine
+	go func() {
+		scanner := bufio.NewScanner(stderr)
+		var duration float64
+
+		// First, try to find the duration
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "Duration:") {
+				// Parse duration in format "Duration: 00:00:00.00"
+				parts := strings.Split(line, "Duration: ")
+				if len(parts) > 1 {
+					timeStr := strings.Split(parts[1], ",")[0]
+					h, m, s := 0, 0, 0.0
+					fmt.Sscanf(timeStr, "%d:%d:%f", &h, &m, &s)
+					duration = float64(h*3600) + float64(m*60) + s
+					break
+				}
+			}
+		}
+
+		// Now process the time updates
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "time=") {
+				// Parse time in format "time=00:00:00.00"
+				parts := strings.Split(line, "time=")
+				if len(parts) > 1 {
+					timeStr := strings.Split(parts[1], " ")[0]
+					h, m, s := 0, 0, 0.0
+					fmt.Sscanf(timeStr, "%d:%d:%f", &h, &m, &s)
+					currentTime := float64(h*3600) + float64(m*60) + s
+
+					if duration > 0 {
+						// Calculate progress within the FFMPEG phase (25-75%)
+						ffmpegProgress := (currentTime / duration) * 50
+						job.Progress = 25 + int(ffmpegProgress)
+						if err := service.jobRepo.Update(ctx, job); err != nil {
+							logger.Error("failed to update job progress", "error", err)
+						}
+					}
+				}
+			}
+		}
+	}()
 
 	if err := cmd.Wait(); err != nil {
 		s.updateJobStatus(ctx, job, "FAILED", fmt.Sprintf("FFmpeg processing failed: %v", err))
@@ -168,9 +240,17 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 	ffmpegEndTime := time.Now()
 	job.FFmpegCommandRunSeconds = ffmpegEndTime.Sub(ffmpegStartTime).Seconds()
 
-	// Upload output files and gather metadata
+	// Upload output files and gather metadata (75-99% of progress)
+	job.Progress = 75
+	if err := s.jobRepo.Update(ctx, job); err != nil {
+		logger.Error("failed to update job progress", "error", err)
+	}
+
 	var totalOutputSize int64
 	job.OutputFiles = make(map[string]domain.OutputFileMetadata)
+
+	totalOutputFiles := len(outputPaths)
+	currentOutputFile := 0
 
 	for key, outputPath := range outputPaths {
 		outputFileInfo, err := os.Stat(outputPath)
@@ -217,10 +297,18 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 		}
 
 		job.OutputFiles[key] = metadata
+
+		currentOutputFile++
+		// Update progress for upload phase (75-99%)
+		job.Progress = 75 + int(float64(currentOutputFile)/float64(totalOutputFiles)*24)
+		if err := s.jobRepo.Update(ctx, job); err != nil {
+			logger.Error("failed to update job progress", "error", err)
+		}
 	}
 
-	// Update job status to completed
+	// Update job status to completed and set progress to 100%
 	job.Status = "SUCCESS"
+	job.Progress = 100
 	job.TotalProcessingSeconds = time.Since(startTime).Seconds()
 	job.Result = "Successfully processed files"
 	if err := s.jobRepo.Update(ctx, job); err != nil {
