@@ -1,50 +1,23 @@
 # FFMPEG Serverless API
 
-A robust and scalable serverless API for processing videos using FFMPEG. This service provides a RESTful interface for video processing operations with comprehensive job management, storage options, and user authentication.
+A robust and scalable serverless API for processing videos using FFMPEG. This service provides a RESTful interface for video processing operations with support for both local and MinIO storage backends.
 
 ## Features
 
-- **Advanced Video Processing**:
-
-  - Asynchronous FFMPEG command execution
-  - Real-time progress tracking (0-100%)
-  - Support for multiple input and output files
-  - Custom FFMPEG command templating
-  - Detailed job status monitoring
-  - Processing time metrics
-
-- **Comprehensive Storage System**:
-
+- **Video Processing**: Process videos using FFMPEG with customizable commands
+- **Storage Options**:
   - Local storage for development
-  - MinIO integration for production
-  - Automatic bucket creation and policy management
-  - Support for external URLs
-  - User-specific storage paths
-  - Temporary file management
-
-- **Authentication & Security**:
-
+  - MinIO integration for production-ready object storage
+- **Authentication**:
   - User registration and login
-  - Secure password hashing with bcrypt
   - API token-based authentication
-  - User-specific resource isolation
-  - Usage tracking and statistics
-
 - **Job Management**:
-
-  - Unique job UUID tracking
-  - Detailed job status and progress
-  - File metadata collection
-  - Processing time statistics
-  - Error handling and reporting
-
-- **File Processing Features**:
-  - Multi-file input support
-  - Format detection
-  - Image dimension extraction
-  - File size tracking
-  - Progress monitoring
-  - Cleanup of temporary files
+  - Asynchronous video processing
+  - Job status tracking and progress monitoring
+- **Scalable Architecture**:
+  - Modular design
+  - Clean separation of concerns
+  - Interface-based dependencies
 
 ## Prerequisites
 
@@ -52,35 +25,44 @@ A robust and scalable serverless API for processing videos using FFMPEG. This se
 - FFMPEG installed on the system
 - SQLite (for development)
 - MinIO (optional, for production storage)
+- Access to S3-compatible storage:
+  - Either MinIO instance running locally/remotely
+  - Or accessible S3 bucket with proper credentials
+  - Source videos must be stored in S3-compatible storage
+  - Output videos will be stored in the same storage
 
 ## Configuration
 
-The application uses environment variables for configuration. Create a `.env` file in the root directory:
+The application uses environment variables for configuration. Create a `.env` file in the root directory with the following variables:
 
 ```env
 # Server Configuration
-SERVER_PORT=8000
-API_TOKEN_LENGTH=32
+SERVER_PORT=
+API_TOKEN_LENGTH=
 
 # Database Configuration
-DB_DRIVER=sqlite
-DB_DSN=ffmpeg_api.db
+DB_DRIVER=
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=
+POSTGRES_PORT=
+DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}
 
 # FFMPEG Configuration
-FFMPEG_PATH=/usr/bin/ffmpeg
-TEMP_DIR=tmp
-PROGRESS_UPDATE_INTERVAL=5
+FFMPEG_PATH=
+TEMP_DIR=
+PROGRESS_UPDATE_INTERVAL=
 
 # Storage Configuration
-STORAGE_PROVIDER=local  # or 'minio'
-MINIO_ENDPOINT=127.0.0.1
-MINIO_PORT=56732
-MINIO_ACCESS_KEY=your_access_key
-MINIO_SECRET_KEY=your_secret_key
-MINIO_USE_SSL=false
-MINIO_BUCKET_NAME=ffmpeg-files
-MINIO_REGION=us-east-1
-MINIO_BUCKET_URL=http://your-minio-url
+STORAGE_PROVIDER=
+MINIO_ENDPOINT=
+MINIO_PORT=
+MINIO_ACCESS_KEY=
+MINIO_SECRET_KEY=
+MINIO_USE_SSL=
+MINIO_REGION=
+MINIO_BUCKET_NAME=
+MINIO_BUCKET_URL=
 ```
 
 ## Installation
@@ -104,9 +86,17 @@ go mod download
 go build -o ffmpeg-api ./cmd/main.go
 ```
 
-## API Endpoints
+## Usage
 
-### Authentication
+### Starting the Server
+
+```bash
+./ffmpeg-api
+```
+
+### API Endpoints
+
+#### Authentication
 
 - **Register User**
 
@@ -118,14 +108,6 @@ go build -o ffmpeg-api ./cmd/main.go
     "username": "user",
     "password": "password",
     "email": "user@example.com"
-  }
-  ```
-
-  Response:
-
-  ```json
-  {
-    "api_token": "your_api_token"
   }
   ```
 
@@ -141,15 +123,7 @@ go build -o ffmpeg-api ./cmd/main.go
   }
   ```
 
-  Response:
-
-  ```json
-  {
-    "api_token": "your_api_token"
-  }
-  ```
-
-### Video Processing
+#### Video Processing
 
 - **Process Video**
 
@@ -159,51 +133,18 @@ go build -o ffmpeg-api ./cmd/main.go
   Content-Type: application/json
 
   {
-    "ffmpeg_command": "ffmpeg -i {{input}} {{output}}",
-    "input_files": {
-      "input": "https://example.com/input.mp4"
-    },
-    "output_files": {
-      "output": "output.mp4"
-    }
-  }
-  ```
-
-  Response:
-
-  ```json
-  {
-    "uuid": "job_uuid",
-    "status": "pending"
+    "command": "custom_ffmpeg_command",
+    "s3_file_url": "https://example.com/video.mp4",
+    "format": "mp4",
+    "quality": "high"
   }
   ```
 
 - **Check Job Status**
+
   ```http
   GET /ffmpeg/progress/{uuid}
   X-API-Token: your_api_token
-  ```
-  Response:
-  ```json
-  {
-    "uuid": "job_uuid",
-    "status": "PROCESSING",
-    "progress": 45,
-    "result": "",
-    "created_at": "2024-03-21T10:00:00Z",
-    "updated_at": "2024-03-21T10:01:00Z",
-    "total_processing_seconds": 60,
-    "ffmpeg_command_run_seconds": 45,
-    "output_files": {
-      "output": {
-        "file_id": "unique_id",
-        "file_type": "video",
-        "file_format": "mp4",
-        "size_mbytes": 10.5,
-        "storage_url": "http://storage/path/to/file.mp4"
-      }
-    }
-  }
   ```
 
 ## Project Structure
@@ -211,22 +152,17 @@ go build -o ffmpeg-api ./cmd/main.go
 ```
 .
 ├── cmd/
-│   └── main.go                 # Application entry point
+│   └── main.go           # Application entry point
 ├── internal/
-│   ├── config/                 # Configuration management
-│   ├── domain/                 # Domain models and interfaces
-│   ├── dto/                    # Data Transfer Objects
-│   ├── handlers/               # HTTP handlers and routing
-│   │   └── routes/            # Route definitions
-│   ├── logger/                # Logging utilities
-│   ├── repository/            # Data access layer
-│   ├── response/              # HTTP response utilities
-│   ├── service/               # Business logic
-│   │   ├── auth_service.go    # Authentication service
-│   │   ├── ffmpeg_service.go  # FFMPEG processing service
-│   │   └── storage_service.go # File storage service
-│   └── validation/            # Request validation
-├── docs/                      # API documentation
+│   ├── config/           # Configuration management
+│   ├── domain/           # Domain models
+│   ├── dto/              # Data Transfer Objects
+│   ├── handlers/         # HTTP handlers
+│   ├── logger/           # Logging utilities
+│   ├── repository/       # Data access layer
+│   ├── response/         # HTTP response utilities
+│   ├── service/          # Business logic
+│   └── validation/       # Request validation
 ├── go.mod
 ├── go.sum
 └── README.md
@@ -248,15 +184,13 @@ The API uses standardized error responses:
 
 Common error codes:
 
-- `BAD_REQUEST`: Invalid request parameters
-- `UNAUTHORIZED`: Missing or invalid API token
-- `FORBIDDEN`: Insufficient permissions
-- `NOT_FOUND`: Resource not found
-- `INTERNAL_SERVER_ERROR`: Server-side error
-- `VALIDATION_ERROR`: Request validation failed
-- `INVALID_CREDENTIALS`: Wrong username or password
-- `STORAGE_ERROR`: File storage/retrieval error
-- `FFMPEG_ERROR`: Video processing error
+- `BAD_REQUEST`
+- `UNAUTHORIZED`
+- `FORBIDDEN`
+- `NOT_FOUND`
+- `INTERNAL_SERVER_ERROR`
+- `VALIDATION_ERROR`
+- `INVALID_CREDENTIALS`
 
 ## Contributing
 
