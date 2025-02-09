@@ -4,9 +4,9 @@ import "ffmpeg-api/internal/domain"
 
 // FFMPEGRequest represents the FFMPEG processing request
 type FFMPEGRequest struct {
-	InputFiles    map[string]string `json:"input_files" validate:"required,min=1"`
-	OutputFiles   map[string]string `json:"output_files" validate:"required,min=1"`
-	FFmpegCommand string            `json:"ffmpeg_command" validate:"required"`
+	InputFiles    map[string]string `json:"input_files" validate:"required,min=1" example:"{\"in1\": \"https://storage.googleapis.com/ffmpeg-api-test-bucket/user_1/input/test.mp4\"}"`
+	OutputFiles   map[string]string `json:"output_files" validate:"required,min=1" example:"{\"out1\": \"string.mp4\"}"`
+	FFmpegCommand string            `json:"ffmpeg_command" validate:"required" example:"-i {{in1}} {{out1}}"`
 }
 
 // FFMPEGResponse represents the FFMPEG processing response

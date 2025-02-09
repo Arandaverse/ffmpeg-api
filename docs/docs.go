@@ -419,6 +419,32 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "domain.OutputFileMetadata": {
+            "type": "object",
+            "properties": {
+                "file_format": {
+                    "type": "string"
+                },
+                "file_id": {
+                    "type": "string"
+                },
+                "file_type": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "size_mbytes": {
+                    "type": "number"
+                },
+                "storage_url": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.AuthResponse": {
             "type": "object",
             "properties": {
@@ -439,18 +465,25 @@ const docTemplate = `{
             ],
             "properties": {
                 "ffmpeg_command": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "-i {{in1}} {{out1}}"
                 },
                 "input_files": {
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
+                    },
+                    "example": {
+                        "{\"in1\"": " \"https://storage.googleapis.com/ffmpeg-api-test-bucket/user_1/input/test.mp4\"}"
                     }
                 },
                 "output_files": {
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
+                    },
+                    "example": {
+                        "{\"out1\"": " \"string.mp4\"}"
                     }
                 }
             }
@@ -477,6 +510,12 @@ const docTemplate = `{
                 },
                 "error": {
                     "type": "string"
+                },
+                "output_files": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/domain.OutputFileMetadata"
+                    }
                 },
                 "progress": {
                     "type": "integer"

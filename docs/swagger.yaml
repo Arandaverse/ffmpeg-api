@@ -1,5 +1,22 @@
 basePath: /
 definitions:
+  domain.OutputFileMetadata:
+    properties:
+      file_format:
+        type: string
+      file_id:
+        type: string
+      file_type:
+        type: string
+      height:
+        type: integer
+      size_mbytes:
+        type: number
+      storage_url:
+        type: string
+      width:
+        type: integer
+    type: object
   dto.AuthResponse:
     properties:
       api_token:
@@ -10,14 +27,19 @@ definitions:
   dto.FFMPEGRequest:
     properties:
       ffmpeg_command:
+        example: -i {{in1}} {{out1}}
         type: string
       input_files:
         additionalProperties:
           type: string
+        example:
+          '{"in1"': ' "https://storage.googleapis.com/ffmpeg-api-test-bucket/user_1/input/test.mp4"}'
         type: object
       output_files:
         additionalProperties:
           type: string
+        example:
+          '{"out1"': ' "string.mp4"}'
         type: object
     required:
     - ffmpeg_command
@@ -37,6 +59,10 @@ definitions:
         type: string
       error:
         type: string
+      output_files:
+        additionalProperties:
+          $ref: '#/definitions/domain.OutputFileMetadata'
+        type: object
       progress:
         type: integer
       result:
