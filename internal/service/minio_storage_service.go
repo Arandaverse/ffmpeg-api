@@ -145,10 +145,11 @@ func (s *MinioStorageService) DownloadFile(ctx context.Context, url string) (str
 	return tmpFile.Name(), nil
 }
 
-func (s *MinioStorageService) UploadFile(ctx context.Context, localPath string, objectKey string) (string, error) {
+func (s *MinioStorageService) UploadFile(ctx context.Context, localPath string, objectKey string, userID uint) (string, error) {
 	logger.Debug("uploading file",
 		"local_path", localPath,
-		"object_key", objectKey)
+		"object_key", objectKey,
+		"user_id", userID)
 
 	// Open the local file
 	file, err := os.Open(localPath)
@@ -165,17 +166,21 @@ func (s *MinioStorageService) UploadFile(ctx context.Context, localPath string, 
 		return "", fmt.Errorf("failed to get file info: %w", err)
 	}
 
+	// Create user-specific object key
+	userObjectKey := fmt.Sprintf("user_%d/%s", userID, objectKey)
+
 	// Upload the file to MinIO
 	logger.Debug("uploading to MinIO",
 		"bucket", s.config.Storage.MinioBucketName,
-		"object", objectKey,
+		"object", userObjectKey,
 		"size", fileInfo.Size())
 
-	_, err = s.client.PutObject(ctx, s.config.Storage.MinioBucketName, objectKey, file, fileInfo.Size(),
+	_, err = s.client.PutObject(ctx, s.config.Storage.MinioBucketName, userObjectKey, file, fileInfo.Size(),
 		minio.PutObjectOptions{
 			ContentType: "application/octet-stream",
 			UserMetadata: map[string]string{
 				"x-amz-meta-filename": objectKey,
+				"x-amz-meta-userid":   fmt.Sprintf("%d", userID),
 			},
 			Expires: time.Now().Add(time.Hour * 24 * 30),
 		})
@@ -186,10 +191,10 @@ func (s *MinioStorageService) UploadFile(ctx context.Context, localPath string, 
 
 	logger.Info("file uploaded successfully",
 		"bucket", s.config.Storage.MinioBucketName,
-		"object", objectKey)
+		"object", userObjectKey)
 
 	// return the full url
-	return fmt.Sprintf("%s/%s", s.config.Storage.MinioBucketURL, objectKey), nil
+	return fmt.Sprintf("%s/%s", s.config.Storage.MinioBucketURL, userObjectKey), nil
 }
 
 func (s *MinioStorageService) DeleteFile(ctx context.Context, localPath string) error {

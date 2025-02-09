@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 // User represents a user in the system.
 type User struct {
@@ -26,28 +31,85 @@ type OutputFileMetadata struct {
 	Height     int     `json:"height"`
 }
 
+// OutputFilesMap is a custom type for handling the map of output files in the database
+type OutputFilesMap map[string]OutputFileMetadata
+
+// Scan implements the sql.Scanner interface for OutputFilesMap
+func (o *OutputFilesMap) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("expected []byte, got %T", value)
+	}
+
+	return json.Unmarshal(bytes, &o)
+}
+
+// Value implements the driver.Valuer interface for OutputFilesMap
+func (o OutputFilesMap) Value() (driver.Value, error) {
+	if o == nil {
+		return nil, nil
+	}
+	return json.Marshal(o)
+}
+
+func (o *OutputFileMetadata) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	return json.Unmarshal(value.([]byte), &o)
+}
+
 // JobStatus represents the status of an FFMPEG job.
 type JobStatus struct {
-	ID                      uint                          `gorm:"primaryKey" json:"id"`
-	UUID                    string                        `gorm:"uniqueIndex" json:"uuid"`
-	Status                  string                        `json:"status"`
-	Result                  string                        `json:"-"`
-	Progress                int                           `json:"progress"`
-	Error                   string                        `json:"error,omitempty"`
-	UserID                  uint                          `json:"user_id"`
-	OriginalRequest         *FFMPEGRequest                `json:"original_request,omitempty" gorm:"-"`
-	OutputFiles             map[string]OutputFileMetadata `json:"output_files,omitempty" gorm:"-"`
-	FFmpegCommandRunSeconds float64                       `json:"ffmpeg_command_run_seconds,omitempty"`
-	TotalProcessingSeconds  float64                       `json:"total_processing_seconds,omitempty"`
-	CreatedAt               time.Time                     `json:"created_at"`
-	UpdatedAt               time.Time                     `json:"updated_at"`
+	ID                      uint           `gorm:"primaryKey" json:"id"`
+	UUID                    string         `gorm:"uniqueIndex" json:"uuid"`
+	Status                  string         `json:"status"`
+	Result                  string         `json:"-"`
+	Progress                int            `json:"progress"`
+	Error                   string         `json:"error,omitempty"`
+	UserID                  uint           `json:"user_id"`
+	OriginalRequest         *FFMPEGRequest `json:"original_request,omitempty" gorm:"type:jsonb"`
+	OutputFiles             OutputFilesMap `json:"output_files,omitempty" gorm:"type:jsonb"`
+	FFmpegCommandRunSeconds float64        `json:"ffmpeg_command_run_seconds,omitempty"`
+	TotalProcessingSeconds  float64        `json:"total_processing_seconds,omitempty"`
+	CreatedAt               time.Time      `json:"created_at"`
+	UpdatedAt               time.Time      `json:"updated_at"`
 }
 
 // FFMPEGRequest represents the request body for the /ffmpeg endpoint.
 type FFMPEGRequest struct {
-	InputFiles    map[string]string `json:"input_files"`
-	OutputFiles   map[string]string `json:"output_files"`
+	InputFiles    map[string]string `json:"input_files" gorm:"type:jsonb"`
+	OutputFiles   map[string]string `json:"output_files" gorm:"type:jsonb"`
 	FFmpegCommand string            `json:"ffmpeg_command"`
+}
+
+// Scan implements the sql.Scanner interface for FFMPEGRequest
+func (f *FFMPEGRequest) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("expected []byte, got %T", value)
+	}
+
+	if err := json.Unmarshal(bytes, &f); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Value implements the driver.Valuer interface for FFMPEGRequest
+func (f FFMPEGRequest) Value() (driver.Value, error) {
+	if f.InputFiles == nil && f.OutputFiles == nil && f.FFmpegCommand == "" {
+		return nil, nil
+	}
+	return json.Marshal(f)
 }
 
 // FFMPEGResponse represents the response from the FFMPEG processing endpoint.

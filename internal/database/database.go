@@ -4,7 +4,10 @@ import (
 	"ffmpeg-api/internal/config"
 	"ffmpeg-api/internal/logger"
 	"fmt"
+	"os"
+	"time"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -29,10 +32,34 @@ func NewDatabase(cfg *config.Config) (Database, error) {
 	switch cfg.Database.Driver {
 	case "sqlite":
 		return newSQLiteDatabase(cfg)
+	case "postgres":
+		return newPostgresDatabase(cfg)
 	// Add more database drivers here
 	default:
 		return nil, fmt.Errorf("unsupported database driver: %s", cfg.Database.Driver)
 	}
+}
+
+var databaseConnectionAttempts = 0
+
+func newPostgresDatabase(cfg *config.Config) (Database, error) {
+	logger.Info("initializing Postgres database")
+	db, err := gorm.Open(postgres.Open(cfg.Database.URI), &gorm.Config{})
+	if err != nil {
+		//add databaseConnectionAttempts
+		databaseConnectionAttempts++
+		if databaseConnectionAttempts > 3 {
+			logger.Error("failed to connect to Postgres database: " + err.Error())
+			logger.Error("Killing the process ...")
+			os.Exit(1)
+			return nil, err
+		}
+		logger.Error("failed to connect to Postgres database: " + err.Error())
+		logger.Info("retrying in 5 seconds ...")
+		time.Sleep(5 * time.Second)
+		return newPostgresDatabase(cfg)
+	}
+	return &GormDatabase{db: db}, nil
 }
 
 func newSQLiteDatabase(cfg *config.Config) (Database, error) {

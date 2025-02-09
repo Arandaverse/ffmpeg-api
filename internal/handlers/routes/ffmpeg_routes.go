@@ -152,6 +152,7 @@ func (r *FFMPEGRoutes) handleGetProgress(c *fiber.Ctx) error {
 	}
 
 	status, err := r.ffmpegService.GetJobStatus(c.Context(), uuid, user.ID)
+	logger.Debug(status, "<<")
 	if err != nil {
 		logger.Error("failed to get job status", "error", err, "uuid", uuid)
 		return c.Status(fiber.StatusNotFound).JSON(response.Response{

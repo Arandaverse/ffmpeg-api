@@ -55,9 +55,10 @@ func (s *LocalStorageService) DownloadFile(ctx context.Context, url string) (str
 	return tmpFile.Name(), nil
 }
 
-func (s *LocalStorageService) UploadFile(ctx context.Context, localPath string, objectKey string) (string, error) {
+func (s *LocalStorageService) UploadFile(ctx context.Context, localPath string, objectKey string, userID uint) (string, error) {
 	// For local storage, we'll just copy the file to a permanent location
-	destPath := filepath.Join(s.config.Storage.TempDirectory, "uploads", objectKey)
+	userPath := fmt.Sprintf("user_%d", userID)
+	destPath := filepath.Join(s.config.Storage.TempDirectory, "uploads", userPath, objectKey)
 
 	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
@@ -82,7 +83,7 @@ func (s *LocalStorageService) UploadFile(ctx context.Context, localPath string, 
 	}
 
 	// Return URL
-	return fmt.Sprintf("%s/%s", s.config.Storage.TempDirectory, objectKey), nil
+	return fmt.Sprintf("%s/%s/%s", s.config.Storage.TempDirectory, userPath, objectKey), nil
 }
 
 func (s *LocalStorageService) DeleteFile(ctx context.Context, localPath string) error {

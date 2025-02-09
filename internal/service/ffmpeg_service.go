@@ -260,7 +260,7 @@ func (s *FFMPEGServiceImpl) processFFMPEGJob(ctx context.Context, job *domain.Jo
 		}
 		totalOutputSize += outputFileInfo.Size()
 
-		s3URL, err := s.storageService.UploadFile(ctx, outputPath, filepath.Base(outputPath))
+		s3URL, err := s.storageService.UploadFile(ctx, outputPath, filepath.Base(outputPath), job.UserID)
 		if err != nil {
 			s.updateJobStatus(ctx, job, "FAILED", fmt.Sprintf("failed to upload output file %s: %v", key, err))
 			return

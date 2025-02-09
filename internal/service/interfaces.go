@@ -21,6 +21,6 @@ type FFMPEGService interface {
 // StorageService defines the interface for file storage operations
 type StorageService interface {
 	DownloadFile(ctx context.Context, url string) (string, error)
-	UploadFile(ctx context.Context, localPath string, objectKey string) (string, error)
+	UploadFile(ctx context.Context, localPath string, objectKey string, userID uint) (string, error)
 	DeleteFile(ctx context.Context, localPath string) error
 }

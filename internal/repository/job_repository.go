@@ -4,6 +4,7 @@ import (
 	"context"
 	"ffmpeg-api/internal/database"
 	"ffmpeg-api/internal/domain"
+	"ffmpeg-api/internal/logger"
 )
 
 type GormJobRepository struct {
@@ -41,6 +42,7 @@ func (r *GormJobRepository) FindByUUID(ctx context.Context, uuid string) (*domai
 	if err != nil {
 		return nil, err
 	}
+	logger.Debug("Finding job by UUID: " + uuid)
 	var job domain.JobStatus
 	if err := db.WithContext(ctx).Where("uuid = ?", uuid).First(&job).Error; err != nil {
 		return nil, err

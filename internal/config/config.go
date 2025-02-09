@@ -29,6 +29,7 @@ type ServerConfig struct {
 type DatabaseConfig struct {
 	Driver string
 	DSN    string
+	URI    string
 }
 
 // FFMPEGConfig holds FFMPEG related configuration
@@ -76,6 +77,7 @@ func LoadConfig() (*Config, error) {
 		Database: DatabaseConfig{
 			Driver: getEnv("DB_DRIVER", "sqlite"),
 			DSN:    getEnv("DB_DSN", "ffmpeg_api.db"),
+			URI:    getEnv("DB_URI", ""),
 		},
 		FFMPEG: FFMPEGConfig{
 			BinaryPath:             getEnv("FFMPEG_PATH", "/usr/bin/ffmpeg"),
