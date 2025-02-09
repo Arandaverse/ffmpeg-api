@@ -182,7 +182,7 @@ func (s *MinioStorageService) UploadFile(ctx context.Context, localPath string, 
 				"x-amz-meta-filename": objectKey,
 				"x-amz-meta-userid":   fmt.Sprintf("%d", userID),
 			},
-			Expires: time.Now().Add(time.Hour * 24 * 30),
+			Expires: time.Now().Add(time.Hour),
 		})
 	if err != nil {
 		logger.Error("failed to upload file to MinIO", "error", err)
