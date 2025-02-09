@@ -9,6 +9,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *domain.User) error
 	FindByUsername(ctx context.Context, username string) (*domain.User, error)
+	FindByUsernameWithPassword(ctx context.Context, username string) (*domain.User, error)
 	FindByAPIToken(ctx context.Context, token string) (*domain.User, error)
 	IncrementUsage(ctx context.Context, userID uint) error
 	IncrementBytesProcessed(ctx context.Context, userID uint, bytes int64) error

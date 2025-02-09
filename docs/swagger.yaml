@@ -9,28 +9,20 @@ definitions:
     type: object
   dto.FFMPEGRequest:
     properties:
-      command:
+      ffmpeg_command:
         type: string
-      format:
-        enum:
-        - mp4
-        - webm
-        - mov
-        - avi
-        type: string
-      quality:
-        enum:
-        - low
-        - medium
-        - high
-        type: string
-      s3_file_url:
-        type: string
+      input_files:
+        additionalProperties:
+          type: string
+        type: object
+      output_files:
+        additionalProperties:
+          type: string
+        type: object
     required:
-    - command
-    - format
-    - quality
-    - s3_file_url
+    - ffmpeg_command
+    - input_files
+    - output_files
     type: object
   dto.FFMPEGResponse:
     properties:
@@ -116,6 +108,21 @@ info:
   title: FFMPEG Serverless API
   version: "1.0"
 paths:
+  /:
+    get:
+      consumes:
+      - text/html
+      description: Display the main page with redirect button
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML content
+          schema:
+            type: string
+      summary: Show index page
+      tags:
+      - Index
   /ffmpeg:
     post:
       consumes:

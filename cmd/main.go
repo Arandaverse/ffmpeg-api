@@ -88,7 +88,9 @@ func main() {
 	handler := handlers.NewHandler(authService, ffmpegService)
 
 	// Swagger documentation
-	app.Get("/swagger/*", swagger.HandlerDefault)
+	app.Get("/swagger/*", swagger.New(swagger.Config{
+		PersistAuthorization: true,
+	}))
 
 	// Register routes
 	handler.RegisterRoutes(app)

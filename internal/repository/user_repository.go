@@ -18,12 +18,21 @@ func NewGormUserRepository(db *gorm.DB) *GormUserRepository {
 }
 
 func (r *GormUserRepository) Create(ctx context.Context, user *domain.User) error {
-	return r.db.WithContext(ctx).Create(user).Error
+	return r.db.WithContext(ctx).Create(user).First(&user).Error
 }
 
 func (r *GormUserRepository) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var user domain.User
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *GormUserRepository) FindByUsernameWithPassword(ctx context.Context, username string) (*domain.User, error) {
+	var user domain.User
+	err := r.db.WithContext(ctx).Where("username = ?", username).Select("username, email, password, api_token").First(&user).Error
 	if err != nil {
 		return nil, err
 	}

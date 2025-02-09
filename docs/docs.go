@@ -22,6 +22,29 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/": {
+            "get": {
+                "description": "Display the main page with redirect button",
+                "consumes": [
+                    "text/html"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Index"
+                ],
+                "summary": "Show index page",
+                "responses": {
+                    "200": {
+                        "description": "HTML content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/ffmpeg": {
             "post": {
                 "security": [
@@ -410,34 +433,25 @@ const docTemplate = `{
         "dto.FFMPEGRequest": {
             "type": "object",
             "required": [
-                "command",
-                "format",
-                "quality",
-                "s3_file_url"
+                "ffmpeg_command",
+                "input_files",
+                "output_files"
             ],
             "properties": {
-                "command": {
+                "ffmpeg_command": {
                     "type": "string"
                 },
-                "format": {
-                    "type": "string",
-                    "enum": [
-                        "mp4",
-                        "webm",
-                        "mov",
-                        "avi"
-                    ]
+                "input_files": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
-                "quality": {
-                    "type": "string",
-                    "enum": [
-                        "low",
-                        "medium",
-                        "high"
-                    ]
-                },
-                "s3_file_url": {
-                    "type": "string"
+                "output_files": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             }
         },

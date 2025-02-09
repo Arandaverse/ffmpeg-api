@@ -14,10 +14,9 @@ var (
 // InitLogger initializes the global logger
 func InitLogger() {
 	Logger = log.NewWithOptions(os.Stderr, log.Options{
-		ReportCaller:    true,
 		ReportTimestamp: true,
 		Level:           log.DebugLevel,
-		Prefix:          "ffmpeg-api",
+		Prefix:          "FFMPEG-API",
 	})
 }
 

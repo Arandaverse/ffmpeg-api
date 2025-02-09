@@ -84,10 +84,9 @@ func (r *FFMPEGRoutes) handleProcessFFMPEG(c *fiber.Ctx) error {
 
 	// Convert DTO to domain model
 	domainReq := domain.FFMPEGRequest{
-		Command:   req.Command,
-		S3FileURL: req.S3FileURL,
-		Format:    req.Format,
-		Quality:   req.Quality,
+		InputFiles:    req.InputFiles,
+		OutputFiles:   req.OutputFiles,
+		FFmpegCommand: req.FFmpegCommand,
 	}
 
 	resp, err := r.ffmpegService.ProcessVideo(c.Context(), domainReq, user.ID)
@@ -166,13 +165,14 @@ func (r *FFMPEGRoutes) handleGetProgress(c *fiber.Ctx) error {
 
 	// Convert domain model to DTO
 	dtoStatus := dto.JobStatus{
-		UUID:      status.UUID,
-		Status:    status.Status,
-		Result:    status.Result,
-		Progress:  status.Progress,
-		Error:     status.Error,
-		CreatedAt: status.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt: status.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UUID:        status.UUID,
+		Status:      status.Status,
+		Result:      status.Result,
+		Progress:    status.Progress,
+		Error:       status.Error,
+		CreatedAt:   status.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:   status.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		OutputFiles: status.OutputFiles,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Response{
