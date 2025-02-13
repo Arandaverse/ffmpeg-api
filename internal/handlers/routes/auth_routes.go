@@ -7,6 +7,7 @@ import (
 	"ffmpeg-api/internal/response"
 	"ffmpeg-api/internal/service"
 	"ffmpeg-api/internal/validation"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -41,7 +42,7 @@ func (r *AuthRoutes) Register(router fiber.Router) {
 // @Failure 400 {object} response.Response{error=response.APIError} "Invalid request or validation error"
 // @Failure 409 {object} response.Response{error=response.APIError} "Username or email already exists"
 // @Failure 500 {object} response.Response{error=response.APIError} "Internal server error"
-// @Router /api/v1/auth/register [post]
+// @Router /auth/register [post]
 func (r *AuthRoutes) handleRegister(c *fiber.Ctx) error {
 	var req dto.RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -51,6 +52,17 @@ func (r *AuthRoutes) handleRegister(c *fiber.Ctx) error {
 			Error: &response.APIError{
 				Type:    "BadRequest",
 				Message: "Invalid request body",
+			},
+		})
+	}
+
+	if req.RegisterKey != os.Getenv("REGISTER_KEY") {
+		logger.Error("Invalid register key", "error")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Response{
+			Success: false,
+			Error: &response.APIError{
+				Type:    "BadRequest",
+				Message: "Invalid register key",
 			},
 		})
 	}
@@ -107,7 +119,7 @@ func (r *AuthRoutes) handleRegister(c *fiber.Ctx) error {
 // @Success 200 {object} response.Response{data=dto.AuthResponse} "Successfully logged in"
 // @Failure 400 {object} response.Response{error=response.APIError} "Invalid request or validation error"
 // @Failure 401 {object} response.Response{error=response.APIError} "Invalid credentials"
-// @Router /api/v1/auth/login [post]
+// @Router /auth/login [post]
 func (r *AuthRoutes) handleLogin(c *fiber.Ctx) error {
 	var req dto.LoginRequest
 	if err := c.BodyParser(&req); err != nil {

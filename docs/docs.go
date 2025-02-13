@@ -22,7 +22,7 @@ const docTemplate = `{
     "host": "[[.Host]]",
     "basePath": "[[.BasePath]]",
     "paths": {
-        "/api/v1": {
+        "/": {
             "get": {
                 "description": "Display the main page with redirect button",
                 "consumes": [
@@ -45,7 +45,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/auth/login": {
+        "/auth/login": {
             "post": {
                 "description": "Authenticate user with username and password to obtain an API token for protected endpoints",
                 "consumes": [
@@ -127,7 +127,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/auth/register": {
+        "/auth/register": {
             "post": {
                 "description": "Register a new user account with username, password and email. The password must be at least 8 characters long.",
                 "consumes": [
@@ -227,7 +227,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/ffmpeg": {
+        "/ffmpeg": {
             "post": {
                 "security": [
                     {
@@ -332,7 +332,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/ffmpeg/progress/{uuid}": {
+        "/ffmpeg/progress/{uuid}": {
             "get": {
                 "security": [
                     {
@@ -578,6 +578,7 @@ const docTemplate = `{
             "required": [
                 "email",
                 "password",
+                "register_key",
                 "username"
             ],
             "properties": {
@@ -588,6 +589,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 8
+                },
+                "register_key": {
+                    "type": "string"
                 },
                 "username": {
                     "type": "string",

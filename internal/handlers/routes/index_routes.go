@@ -24,7 +24,7 @@ func (r *IndexRoutes) Register(router fiber.Router) {
 // @Accept html
 // @Produce html
 // @Success 200 {string} string "HTML content"
-// @Router /api/v1 [get]
+// @Router / [get]
 func (r *IndexRoutes) handleIndex(c *fiber.Ctx) error {
 	return c.Render("index", fiber.Map{
 		"Title": "FFMPEG Serverless API",

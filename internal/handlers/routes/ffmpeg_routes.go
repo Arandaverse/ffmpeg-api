@@ -46,7 +46,7 @@ func (r *FFMPEGRoutes) Register(router fiber.Router) {
 // @Failure 400 {object} response.Response{error=response.APIError} "Invalid request or validation error"
 // @Failure 401 {object} response.Response{error=response.APIError} "Missing or invalid API token"
 // @Failure 500 {object} response.Response{error=response.APIError} "Internal server error"
-// @Router /api/v1/ffmpeg [post]
+// @Router /ffmpeg [post]
 func (r *FFMPEGRoutes) handleProcessFFMPEG(c *fiber.Ctx) error {
 	user := c.Locals("user").(*domain.User)
 	if user == nil {
@@ -126,7 +126,7 @@ func (r *FFMPEGRoutes) handleProcessFFMPEG(c *fiber.Ctx) error {
 // @Failure 400 {object} response.Response{error=response.APIError} "Invalid UUID format"
 // @Failure 401 {object} response.Response{error=response.APIError} "Missing or invalid API token"
 // @Failure 404 {object} response.Response{error=response.APIError} "Job not found"
-// @Router /api/v1/ffmpeg/progress/{uuid} [get]
+// @Router /ffmpeg/progress/{uuid} [get]
 func (r *FFMPEGRoutes) handleGetProgress(c *fiber.Ctx) error {
 	user := c.Locals("user").(*domain.User)
 	if user == nil {
