@@ -651,7 +651,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
 	BasePath:         "/api/v1",
-	Schemes:          []string{"http"},
+	Schemes:          []string{},
 	Title:            "FFMPEG Serverless API",
 	Description:      "A serverless API for processing videos using FFMPEG. This API allows you to submit video processing jobs, monitor their progress, and manage user authentication.",
 	InfoInstanceName: "swagger",

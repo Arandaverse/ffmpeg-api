@@ -367,8 +367,6 @@ paths:
       summary: Get job progress
       tags:
       - FFMPEG
-schemes:
-- http
 securityDefinitions:
   ApiKeyAuth:
     description: API token obtained after login. Required for all protected endpoints.
