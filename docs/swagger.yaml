@@ -1,4 +1,4 @@
-basePath: /
+basePath: /api/v1
 definitions:
   domain.OutputFileMetadata:
     properties:
@@ -127,14 +127,15 @@ info:
   contact:
     email: support@swagger.io
     name: API Support
-  description: A serverless API for processing videos using FFMPEG
+  description: A serverless API for processing videos using FFMPEG. This API allows
+    you to submit video processing jobs, monitor their progress, and manage user authentication.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: FFMPEG Serverless API
   version: "1.0"
 paths:
-  /:
+  /api/v1:
     get:
       consumes:
       - text/html
@@ -149,11 +150,114 @@ paths:
       summary: Show index page
       tags:
       - Index
-  /ffmpeg:
+  /api/v1/auth/login:
     post:
       consumes:
       - application/json
-      description: Submit a video processing job using FFMPEG
+      description: Authenticate user with username and password to obtain an API token
+        for protected endpoints
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged in
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request or validation error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+      summary: Login user
+      tags:
+      - Auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with username, password and email.
+        The password must be at least 8 characters long.
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully registered
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request or validation error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "409":
+          description: Username or email already exists
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/response.APIError'
+              type: object
+      summary: Register a new user
+      tags:
+      - Auth
+  /api/v1/ffmpeg:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Submit a video processing job using FFMPEG. The command should use placeholders like {{in1}} for input files and {{out1}} for output files.
+        These placeholders will be replaced with actual file paths during processing.
       parameters:
       - description: FFMPEG processing details
         in: body
@@ -165,7 +269,7 @@ paths:
       - application/json
       responses:
         "202":
-          description: Accepted
+          description: Job accepted for processing
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -174,7 +278,7 @@ paths:
                   $ref: '#/definitions/dto.FFMPEGResponse'
               type: object
         "400":
-          description: Bad Request
+          description: Invalid request or validation error
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -183,7 +287,7 @@ paths:
                   $ref: '#/definitions/response.APIError'
               type: object
         "401":
-          description: Unauthorized
+          description: Missing or invalid API token
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -192,7 +296,7 @@ paths:
                   $ref: '#/definitions/response.APIError'
               type: object
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -205,13 +309,14 @@ paths:
       summary: Process video with FFMPEG
       tags:
       - FFMPEG
-  /ffmpeg/progress/{uuid}:
+  /api/v1/ffmpeg/progress/{uuid}:
     get:
       consumes:
       - application/json
-      description: Get the progress of a video processing job
+      description: Get the current status and progress of a video processing job.
+        Returns details about output files when the job is completed.
       parameters:
-      - description: Job UUID
+      - description: Job UUID returned from the process endpoint
         in: path
         name: uuid
         required: true
@@ -220,7 +325,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Job status retrieved successfully
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -229,7 +334,7 @@ paths:
                   $ref: '#/definitions/dto.JobStatus'
               type: object
         "400":
-          description: Bad Request
+          description: Invalid UUID format
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -238,7 +343,7 @@ paths:
                   $ref: '#/definitions/response.APIError'
               type: object
         "401":
-          description: Unauthorized
+          description: Missing or invalid API token
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -247,7 +352,7 @@ paths:
                   $ref: '#/definitions/response.APIError'
               type: object
         "404":
-          description: Not Found
+          description: Job not found
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -260,103 +365,19 @@ paths:
       summary: Get job progress
       tags:
       - FFMPEG
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Login with username and password to get API token
-      parameters:
-      - description: Login credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.AuthResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                error:
-                  $ref: '#/definitions/response.APIError'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                error:
-                  $ref: '#/definitions/response.APIError'
-              type: object
-      summary: Login user
-      tags:
-      - Auth
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user with username, password and email
-      parameters:
-      - description: Registration details
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.RegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.AuthResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                error:
-                  $ref: '#/definitions/response.APIError'
-              type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                error:
-                  $ref: '#/definitions/response.APIError'
-              type: object
-      summary: Register a new user
-      tags:
-      - Auth
 schemes:
 - http
-- https
 securityDefinitions:
   ApiKeyAuth:
-    description: API token for authentication
+    description: API token obtained after login. Required for all protected endpoints.
     in: header
     name: X-API-Token
     type: apiKey
 swagger: "2.0"
+tags:
+- description: Authentication endpoints for user registration and login
+  name: Auth
+- description: Video processing endpoints using FFMPEG
+  name: FFMPEG
+- description: Main page and general information
+  name: Index

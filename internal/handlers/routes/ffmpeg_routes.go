@@ -27,7 +27,7 @@ func NewFFMPEGRoutes(ffmpegService service.FFMPEGService, authService service.Au
 
 // Register registers all FFMPEG routes
 func (r *FFMPEGRoutes) Register(router fiber.Router) {
-	ffmpeg := router.Group("/ffmpeg")
+	ffmpeg := router.Group("/api/v1/ffmpeg")
 	ffmpeg.Use(r.authMiddleware)
 	ffmpeg.Post("/", r.handleProcessFFMPEG)
 	ffmpeg.Get("/progress/:uuid", r.handleGetProgress)
@@ -35,17 +35,18 @@ func (r *FFMPEGRoutes) Register(router fiber.Router) {
 
 // handleProcessFFMPEG handles video processing requests
 // @Summary Process video with FFMPEG
-// @Description Submit a video processing job using FFMPEG
+// @Description Submit a video processing job using FFMPEG. The command should use placeholders like {{in1}} for input files and {{out1}} for output files.
+// @Description These placeholders will be replaced with actual file paths during processing.
 // @Tags FFMPEG
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Param request body dto.FFMPEGRequest true "FFMPEG processing details"
-// @Success 202 {object} response.Response{data=dto.FFMPEGResponse}
-// @Failure 400 {object} response.Response{error=response.APIError}
-// @Failure 401 {object} response.Response{error=response.APIError}
-// @Failure 500 {object} response.Response{error=response.APIError}
-// @Router /ffmpeg [post]
+// @Success 202 {object} response.Response{data=dto.FFMPEGResponse} "Job accepted for processing"
+// @Failure 400 {object} response.Response{error=response.APIError} "Invalid request or validation error"
+// @Failure 401 {object} response.Response{error=response.APIError} "Missing or invalid API token"
+// @Failure 500 {object} response.Response{error=response.APIError} "Internal server error"
+// @Router /api/v1/ffmpeg [post]
 func (r *FFMPEGRoutes) handleProcessFFMPEG(c *fiber.Ctx) error {
 	user := c.Locals("user").(*domain.User)
 	if user == nil {
@@ -115,17 +116,17 @@ func (r *FFMPEGRoutes) handleProcessFFMPEG(c *fiber.Ctx) error {
 
 // handleGetProgress handles job progress requests
 // @Summary Get job progress
-// @Description Get the progress of a video processing job
+// @Description Get the current status and progress of a video processing job. Returns details about output files when the job is completed.
 // @Tags FFMPEG
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
-// @Param uuid path string true "Job UUID"
-// @Success 200 {object} response.Response{data=dto.JobStatus}
-// @Failure 400 {object} response.Response{error=response.APIError}
-// @Failure 401 {object} response.Response{error=response.APIError}
-// @Failure 404 {object} response.Response{error=response.APIError}
-// @Router /ffmpeg/progress/{uuid} [get]
+// @Param uuid path string true "Job UUID returned from the process endpoint"
+// @Success 200 {object} response.Response{data=dto.JobStatus} "Job status retrieved successfully"
+// @Failure 400 {object} response.Response{error=response.APIError} "Invalid UUID format"
+// @Failure 401 {object} response.Response{error=response.APIError} "Missing or invalid API token"
+// @Failure 404 {object} response.Response{error=response.APIError} "Job not found"
+// @Router /api/v1/ffmpeg/progress/{uuid} [get]
 func (r *FFMPEGRoutes) handleGetProgress(c *fiber.Ctx) error {
 	user := c.Locals("user").(*domain.User)
 	if user == nil {
