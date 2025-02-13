@@ -1,6 +1,7 @@
 package server
 
 import (
+	_ "ffmpeg-api/docs"
 	"ffmpeg-api/internal/config"
 	"ffmpeg-api/internal/database"
 	"ffmpeg-api/internal/domain"

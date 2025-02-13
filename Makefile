@@ -30,5 +30,8 @@ install-air:
 dev:
 	air
 
+doc:
+	swag init -g cmd/main.go -td "[[,]]"
+
 # Default target
 all: build 
